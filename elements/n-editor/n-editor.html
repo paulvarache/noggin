@@ -1,0 +1,232 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../n-slider/n-slider.html">
+<link rel="import" href="../n-style/typography.html">
+<dom-module id="n-editor">
+    <template>
+        <style>
+            :host {
+                display: block;
+                @apply --layout-horizontal;
+                font-family: var(--font-body);
+                font-weight: bold;
+                color: #F93B40;
+            }
+            .controls, .result {
+                @apply --layout-flex;
+            }
+            .controls {
+                max-width: 320px;
+                padding: 0px 48px;
+                overflow: auto;
+            }
+            path, circle, g {
+                transition: all 300ms cubic-bezier(0.2, 0, 0.14, 2.72);
+            }
+            .vertical {
+                display: flex;
+                flex-direction: column
+            }
+            svg {
+                width: 100%;
+                height: 100%;
+                opacity: 0;
+                transform-origin: center center;
+            }
+            .sliders {
+                @apply --layout-vertical;
+            }
+            n-slider {
+                margin: 6px;
+            }
+            img {
+                width: 200px;
+                margin-top: 14px;
+            }
+        </style>
+        <div class="controls">
+            <img src="/assets/logo.svg" alt="">
+            <div class="control-group">
+                <h2>Face</h2>
+                <div class="sliders">
+                    <n-slider label="Width" min="30" max="300" value="{{face.shape.width}}"></n-slider>
+                    <n-slider label="Height" min="30" max="300" value="{{face.shape.height}}"></n-slider>
+                    <n-slider label="Forehead" min="0" max="100" value="{{face.shape.forehead}}"></n-slider>
+                    <n-slider label="Chin" min="0" max="100" value="{{face.shape.chin}}"></n-slider>
+                </div>
+            </div>
+            <div class="control-group">
+                <h2>Hair</h2>
+                <div class="sliders">
+                    <n-slider label="Thickness" min="10" max="100" value="{{face.hair.thickness}}"></n-slider>
+                    <n-slider label="Length" min="70" max="400" value="{{face.hair.length}}"></n-slider>
+                </div>
+            </div>
+            <div class="control-group">
+                <h2>Eyes</h2>
+                <div class="sliders">
+                    <n-slider label="Distance" min="0" max="100" value="{{face.eyes.distance}}"></n-slider>
+                    <n-slider label="Height" min="0" max="100" value="{{face.eyes.height}}"></n-slider>
+                    <n-slider label="Left eye" min="30" max="100" value="{{face.eyes.left.size}}"></n-slider>
+                    <n-slider label="Left pupil" min="5" max="100" value="{{face.eyes.left.pupil}}"></n-slider>
+                    <n-slider label="Right eye" min="30" max="100" value="{{face.eyes.right.size}}"></n-slider>
+                    <n-slider label="Right pupil" min="5" max="100" value="{{face.eyes.right.pupil}}"></n-slider>
+                </div>
+            </div>
+        </div>
+        <div class="result" id="result">
+            <svg id="svg">
+                <g id="face-group-group">
+                    <g id="hair-back"></g>
+                    <g id="face-group">
+                        <path id="face" fill="#ff9998"></path>
+                        <g id="eyes">
+                            <g id="left-eye-group">
+                                <circle id="left-eye" fill="white"></circle>
+                                <circle id="left-pupil" fill="black"></circle>
+                            </g>
+                            <g id="right-eye-group">
+                                <circle id="right-eye" fill="white"></circle>
+                                <circle id="right-pupil" fill="black"></circle>
+                            </g>
+                        </g>
+                    </g>
+                    <g id="hair-front"></g>
+                </g>
+            </svg>
+        </div>
+    </template>
+    <script>
+        Polymer({
+            is:'n-editor',
+            properties: {
+                started: {
+                    type: Boolean,
+                    observer: 'startedChanged'
+                },
+                face: {
+                    type: Object,
+                    value: () => {
+                        return {
+                            hair: {
+                                length: 100,
+                                thickness: 30
+                            },
+                            shape: {
+                                width: 80,
+                                height: 60,
+                                forehead: 30,
+                                chin: 30
+                            },
+                            eyes: {
+                                distance: 30,
+                                height: 50,
+                                left: {
+                                    size: 20,
+                                    pupil: 5
+                                },
+                                right: {
+                                    size: 20,
+                                    pupil: 5
+                                }
+                            }
+                        };
+                    }
+                }
+            },
+            observers: [
+                'faceChanged(face.*)'
+            ],
+            ready () {
+                this.seed = 2;
+                this.circleSeed = 2;
+                this.messiness = 100;
+                this.hairColors = ['#ffce93'];
+                this.hairPick = this.hairColors[Math.floor(Math.random() * this.hairColors.length)];
+                fetch('/assets/song.mp3')
+                    .then(r => r.arrayBuffer())
+                    .then(ab => {
+                        this.ctx = new AudioContext();
+                        return this.ctx.decodeAudioData(ab);
+                    })
+                    .then(b => {
+                        this.source = this.ctx.createBufferSource();
+                        this.source.buffer = b;
+                        this.source.loop = true;
+                        this.source.connect(this.ctx.destination);
+                        if (this.started) {
+                            this.source.start();
+                        }
+                    });
+            },
+            startedChanged () {
+                this.update();
+                if (this.source) {
+                    this.source.start();
+                }
+                let rect = this.$.svg.getBoundingClientRect();
+                this.$['face-group-group'].style.transform = `translate(${rect.width / 2}px, ${rect.height / 2}px)`;
+                setTimeout(() => {
+                    this.$.svg.animate({
+                        opacity: [0, 1],
+                        transform: ['rotate(45deg) scale(0, 0)', 'rotate(0deg) scale(1, 1)']
+                    }, {
+                        duration: 500,
+                        fill: 'forwards',
+                        easing: 'cubic-bezier(0.2, 0, 0.14, 2.72)'
+                    });
+                }, 500);
+            },
+            faceChanged () {
+                this.update();
+            },
+            generateFacePath(x, y, z, a, h, w) {
+                return `M ${-w}, 0 c 0,${x * h + h} ${y * -w},${h} ${w},${h} c ${y * w + w},0 ${w},${z * h} ${w},${-h} c 0,${z * -h -h} ${a * w},${-h} ${-w},${-h} c ${a * -w -w},0 ${-w},${x * -h} ${-w},${h} Z`;
+            },
+            update () {
+                if (!this.started) {
+                    return;
+                }
+                this.$.face.setAttribute('d', this.generateFacePath(0, (this.face.shape.chin - 50) / 50, 0, (this.face.shape.forehead - 50) / 50, parseInt(this.face.shape.height), parseInt(this.face.shape.width)));
+                this.$['left-eye'].setAttribute('r', this.face.eyes.left.size);
+                this.$['left-pupil'].setAttribute('r', this.face.eyes.left.pupil);
+                this.$['right-eye'].setAttribute('r', this.face.eyes.right.size);
+                this.$['right-pupil'].setAttribute('r', this.face.eyes.right.pupil);
+                this.$['left-eye-group'].style.transform = `translate(${- parseInt(this.face.eyes.distance)}px, 0px)`;
+                this.$['right-eye-group'].style.transform = `translate(${parseInt(this.face.eyes.distance)}px, 0px)`;
+                this.$['hair-back'].style.transform = `translate(0px, -${parseInt(this.face.shape.height) * 2}px)`;
+                this.$['hair-front'].style.transform = `translate(0px, -${parseInt(this.face.shape.height) * 2}px)`;
+                this.$.eyes.style.transform = `translate(0px, ${(this.face.eyes.height - 50)}px)`;
+                while (this.$['hair-back'].firstChild) {
+                    this.$['hair-back'].removeChild(this.$['hair-back'].firstChild);
+                }
+                while (this.$['hair-front'].firstChild) {
+                    this.$['hair-front'].removeChild(this.$['hair-front'].firstChild);
+                }
+                for(var i = 0; i < 1000; i++){
+                    var size = this.circleSeed + this.random() * this.face.hair.thickness;
+                    var yPos = (this.random() * this.face.hair.length + parseInt(this.face.shape.height) - 40);
+                    var parent = yPos > parseInt(this.face.shape.height) ? this.$['hair-back'] : this.$['hair-front'];
+                    this.drawParticle({
+                        "cx": (this.random() * this.face.shape.width * 2) - this.face.shape.width,
+                        "cy": yPos,
+                        "r": size,
+                        "fill": this.hairPick,
+                    }, parent);
+                }
+            },
+            drawParticle(p, el) {
+                var hairCircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                hairCircle.setAttribute("cx", p.cx);
+                hairCircle.setAttribute("cy", p.cy);
+                hairCircle.setAttribute("r", p.r);
+                hairCircle.setAttribute("fill", p.fill);
+                el.appendChild(hairCircle);
+            },
+            random() {
+                var x = Math.sin(this.seed++) * 10000;
+                return x - Math.floor(x);
+            }
+        });
+    </script>
+</dom-module>

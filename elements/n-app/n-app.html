@@ -1,0 +1,80 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/neon-animation/neon-animated-pages.html">
+<link rel="import" href="../../bower_components/neon-animation/neon-animatable.html">
+<link rel="import" href="../../bower_components/neon-animation/neon-animations.html">
+<link rel="import" href="../n-editor/n-editor.html">
+<dom-module id="n-app">
+    <template>
+        <style>
+            :host {
+                display: block;
+            }
+            neon-animated-pages, neon-animated-pages>*, n-editor {
+                width: 100%;
+                height: 100%;
+            }
+            #splash {
+                background: url(/assets/splash.svg);
+                background-size: contain;
+                background-repeat: no-repeat;
+            }
+            #splash2 {
+                background: #2D0930;
+                font-family: var(--font-body);
+                font-weight: bold;
+                color: #F93B40;
+                @apply --layout-vertical;
+                @apply --layout-center;
+                @apply --layout-center-justified;
+                font-size: 48px;
+            }
+            #splash3 {
+                background-color: #2D0930;
+                @apply --layout-vertical;
+                @apply --layout-center;
+                @apply --layout-center-justified;
+            }
+            #editor {
+                background: #2D0930;
+            }
+            img {
+                width: 500px;
+                cursor: pointer;
+            }
+        </style>
+        <neon-animated-pages attr-for-selected="id" selected="[[page]]">
+            <div id="empty" on-tap="begin"></div>
+            <neon-animatable id="splash" entry-animation="fade-in-animation" exit-animation="fade-out-animation"></neon-animatable>
+            <neon-animatable id="splash2" entry-animation="fade-in-animation" exit-animation="fade-out-animation">
+                <h1>Presents</h1>
+            </neon-animatable>
+            <neon-animatable id="splash3" entry-animation="fade-in-animation" exit-animation="fade-out-animation">
+                <img src="/assets/begin.svg" alt="" on-tap="start">
+            </neon-animatable>
+            <neon-animatable id="editor" entry-animation="fade-in-animation" exit-animation="fade-out-animation">
+                <n-editor started="[[editor]]"></n-editor>
+            </neon-animatable>
+        </neon-animated-pages>
+    </template>
+    <script>
+        Polymer({
+            is:'n-app',
+            attached () {
+                this.page = 'empty';
+            },
+            begin () {
+                this.page = 'splash';
+                setTimeout(() => {
+                    this.page = 'splash2';
+                    setTimeout(() => {
+                        this.page = 'splash3';
+                    }, 3000);
+                }, 3000);
+            },
+            start () {
+                this.page = 'editor';
+                this.editor = true;
+            }
+        });
+    </script>
+</dom-module>

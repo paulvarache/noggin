@@ -1,0 +1,23 @@
+{
+  "name": "faces",
+  "authors": [
+    "Paul Varache <perso@paulvarache.ninja>"
+  ],
+  "description": "",
+  "main": "",
+  "license": "MIT",
+  "homepage": "",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "polymer": "Polymer/polymer#^1.8.0",
+    "iron-pages": "PolymerElements/iron-pages#^1.0.8",
+    "neon-animation": "PolymerElements/neon-animated-pages#^1.2.4",
+    "iron-flex-layout": "PolymerElements/iron-flex-layout#^1.3.2"
+  }
+}
